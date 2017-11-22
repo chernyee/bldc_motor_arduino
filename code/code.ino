@@ -7,6 +7,7 @@
   --------------
   2017-11-19  Cy  Created file
   2017-11-21  Cy  Refactor with OO design & allow control of ESC individually (use to program ESC settings)
+  2017-11-23  Cy  Added password protection
  **/
 #include <stdio.h>
 #include "Motor.h"
