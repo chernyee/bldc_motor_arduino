@@ -8,6 +8,7 @@
   2017-11-19  Cy  Created file
   2017-11-21  Cy  Refactor with OO design & allow control of ESC individually (use to program ESC settings)
  **/
+#include <stdio.h>
 #include "Motor.h"
 
 #define MOTOR_COUNT 2
@@ -17,6 +18,9 @@ Motor motors[MOTOR_COUNT] = { Motor(9), Motor(10) };
 
 int buttonState = HIGH;
 int menuState = 0;
+int sessionState = 0;
+int writeIndex = 0;
+char password[9] = { 0 };
 
 void wait(int seconds)
 {
@@ -57,10 +61,14 @@ void stepDown()
   }
 }
 
-void turnOff()
+void toggleOnOff()
 {
   for (int i = 0; i < MOTOR_COUNT; i++) {
-    motors[i].disconnect();
+    if (motors[i].connected()) {
+      motors[i].disconnect();  
+    } else {
+      motors[i].connect();
+    }
   }
 }
 
@@ -93,19 +101,20 @@ void showMenu()
   else 
   {
     Serial.println();
-    Serial.println(F("Main Menu - v2.0 (2017-11-21)"));
+    Serial.println(F("Main Menu - v2.1 (2017-11-23)"));
     Serial.println(F("------------------------------------"));
     Serial.println(F("1. Throttle Up - Max. Speed"));
     Serial.println(F("2. Throttle Down - Stop"));
     Serial.println(F("3. Step Up"));
     Serial.println(F("4. Step Down"));
-    Serial.println(F("5. Turn Off Motors"));
+    Serial.println(F("5. Turn On/Off Motors"));
     Serial.print(F("6. Configure Motor 1 - "));
     showMotorState(0);
     Serial.println();
     Serial.print(F("7. Configure Motor 2 - "));
     showMotorState(1);
     Serial.println();
+    Serial.println(F("8. Logout"));
   }
 }
 
@@ -125,9 +134,6 @@ void setup()
 
   // wait 5 seconds
   wait(5);
-
-  // show main menu
-  showMenu();
 }
 
 void processButton(int state)
@@ -216,7 +222,7 @@ void processCmd()
           break;
 
         case '5':
-          turnOff();
+          toggleOnOff();
           break;
             
         case '6':
@@ -227,6 +233,10 @@ void processCmd()
         case '7':
           menuState = 2;
           showMenu();
+          break;
+
+        case '8':
+          sessionState = 0;
           break;
 
         case 13:
@@ -240,9 +250,59 @@ void processCmd()
   }
 }
 
+void processSession()
+{
+  if (sessionState == 1) 
+  {
+    if (Serial.available()) 
+    {
+      char c = Serial.read();
+      switch (c)
+      {
+        case 13:
+          password[writeIndex] = '\0';
+          if (strncmp(password, "fee3eChu", 8) == 0) {
+            sessionState = 2;
+            Serial.println();
+            showMenu();
+          } else {
+            sessionState = 0;
+          }
+          writeIndex = 0;
+          break;
+
+        case 8:
+        case 127:
+          if (writeIndex > 0) {
+            --writeIndex;
+            Serial.print(F("\b \b"));
+          }          
+          break;
+          
+        default:
+          if (writeIndex < 8) {
+            password[writeIndex++] = c;
+            Serial.print(F("*"));
+          }  
+      }
+    }    
+  }
+  else
+  {
+    sessionState = 1;
+    Serial.println();
+    Serial.print(F("Password: "));
+  }
+}
+
 void loop()
 {
   processButton(digitalRead(BUTTON));
-  processCmd();
+  
+  if (sessionState == 2) {
+    processCmd();  
+  } else {
+    processSession();
+  }
 }
 
