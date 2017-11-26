@@ -8,6 +8,7 @@
   2017-11-19  Cy  Created file
   2017-11-21  Cy  Refactor with OO design & allow control of ESC individually (use to program ESC settings)
   2017-11-23  Cy  Added password protection
+  2017-11-26  Cy  Added LED heart-beat runs at 500ms frequency
  **/
 #include <stdio.h>
 #include "Motor.h"
@@ -18,6 +19,8 @@
 Motor motors[MOTOR_COUNT] = { Motor(9), Motor(10) };
 
 int buttonState = HIGH;
+int heartBeat = LOW;
+unsigned long ticks = 0;
 int menuState = 0;
 int sessionState = 0;
 int writeIndex = 0;
@@ -135,6 +138,9 @@ void setup()
 
   // wait 5 seconds
   wait(5);
+
+  // LED heart beat timming
+  ticks = millis();
 }
 
 void processButton(int state)
@@ -296,10 +302,24 @@ void processSession()
   }
 }
 
+void processHeartBeat()
+{
+  if (buttonState == HIGH)
+  {
+    unsigned long t = millis() - ticks;
+    if (t >= 500) {
+      digitalWrite(LED_BUILTIN, heartBeat = heartBeat == HIGH ? LOW : HIGH);
+      ticks += t;
+    }
+  }
+}
+
 void loop()
 {
   processButton(digitalRead(BUTTON));
   
+  processHeartBeat();
+
   if (sessionState == 2) {
     processCmd();  
   } else {
