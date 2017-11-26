@@ -105,7 +105,7 @@ void showMenu()
   else 
   {
     Serial.println();
-    Serial.println(F("Main Menu - v2.1 (2017-11-23)"));
+    Serial.println(F("Main Menu - v2.2 (2017-11-26)"));
     Serial.println(F("------------------------------------"));
     Serial.println(F("1. Throttle Up - Max. Speed"));
     Serial.println(F("2. Throttle Down - Stop"));
